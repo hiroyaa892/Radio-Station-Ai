@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Radio Station - Your Own YouTube Audio DJ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+  
+  /* Animated gradient background for aesthetic effect */
+  @keyframes gradientBG {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  body {
+    margin: 0;
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(270deg, #1f4037, #99f2c8, #485563, #2f4e5f);
+    background-size: 800% 800%;
+    animation: gradientBG 25s ease infinite;
+  }
+  
+  /* overlay to darken background for readability */
+  body::before {
+    content: "";
+    position: fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  header {
+    padding: 20px;
+    background: rgba(0,0,0,0.45);
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    backdrop-filter: saturate(180%) blur(10px);
+  }
+  header h1 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 2.4rem;
+    letter-spacing: 3px;
+    color: #a0ffee;
+    text-shadow: 0 0 8px #14f9ffbb, 0 0 20px #00ffe0cc;
+  }
+  header p {
+    margin: 0.5rem 0 0 0;
+    font-weight: 400;
+    color: #ccf9ffcc;
+  }
+  
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 600px;
+    margin: 2rem auto 3rem auto;
+    padding: 2rem 2.5rem;
+    background: rgba(10, 25, 22, 0.75);
+    border-radius: 18px;
+    box-shadow:
+      inset 0 0 20px #33ffff55,
+      0 0 30px #0ff;
+    backdrop-filter: saturate(180%) blur(16px);
+  }
+  
+  label {
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #73f8f8dd;
+    text-shadow: 0 0 4px #00fff977;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    margin-bottom: 12px;
+    background: #103030ee;
+    color: #ccfbfbbb;
+    box-shadow: inset 0 0 10px #00ffffaa;
+    transition: background-color 0.3s ease;
+  }
+  input[type="text"]::placeholder {
+    color: #99eeeedb;
+    font-style: italic;
+  }
+  input[type="text"]:focus {
+    background: #124444ff;
+    box-shadow: inset 0 0 14px #00ffffdd;
+  }
+  
+  button {
+    background-color: #00faffbb;
+    border: none;
+    color: #004d4d;
+    font-weight: 700;
+    padding: 14px 22px;
+    border-radius: 12px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.2rem;
+    letter-spacing: 1.1px;
+    transition: background-color 0.4s ease, transform 0.2s ease;
+    box-shadow: 0 0 15px #0ff, 0 0 30px #0ff88;
+  }
+  button:hover {
+    background-color: #22ffffdd;
+    transform: scale(1.08);
+  }
+  button:active {
+    transform: scale(0.97);
+  }
+  
+  #playlist {
+    margin-top: 1.6rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 14px;
+    max-height: 270px;
+    overflow-y: auto;
+    padding: 10px 8px;
+    box-shadow: inset 0 0 15px #00ffff99;
+    color: #ccf9ffcc;
+    font-size: 1.1rem;
+  }
+  #playlist .song {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.13);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  #playlist .song:last-child {
+    border-bottom: none;
+  }
+  #playlist .song:hover {
+    background: #00ffff33;
+  }
+  #playlist .song.playing {
+    background: #00fffedd;
+    color: #003737;
+    font-weight: 700;
+    box-shadow: 0 0 15px #00fffedd, 0 0 30px #22ffffcc;
+  }
+
+  #playlist .remove-btn {
+    color: #00cccccc;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-size: 1.3rem;
+    line-height: 1;
+    user-select: none;
+    filter: drop-shadow(0 0 1px #00ffffcc);
+  }
+  #playlist .remove-btn:hover {
+    color: #ff4444cc;
+    filter: drop-shadow(0 0 5px #ff4444cc);
+  }
+  
+  #now-playing {
+    margin-top: 1.8rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    min-height: 2.4rem;
+    text-align: center;
+    color: #66f6ffcc;
+    text-shadow: 0 0 10px #00faffcc, 0 0 20px #00c9c9cc;
+  }
+
+  #controls {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+  }
+  #controls button {
+    flex: 1 1 auto;
+    max-width: 120px;
+    font-size: 1.1rem;
+    padding: 12px 16px;
+    user-select: none;
+  }
+  
+  #controls button:disabled {
+    background-color: #00505088;
+    color: #003737cc;
+    cursor: default;
+    box-shadow: none;
+  }
+  
+  #commentary-toggle {
+    margin-top: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  #commentary-toggle label {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #66d1ffcc;
+    user-select: none;
+    filter: drop-shadow(0 0 5px #00cfffcc);
+  }
+  
+  #commentary-toggle input[type=checkbox] {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    filter: drop-shadow(0 0 3px #00cfffcc);
+  }
+  
+  footer {
+    text-align: center;
+    padding: 1rem 0;
+    color: #66faffcc;
+    font-size: 0.9rem;
+    background: rgba(0,0,0,0.3);
+    text-shadow: 0 0 6px #00cfffcc;
+    user-select: none;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>AI Radio Station</h1>
+    <p>Search, choose your songs, and enjoy AI commentary</p>
+  </header>
+
+  <main>
+    <label for="search-input">Search on YouTube:</label>
+    <input type="text" id="search-input" placeholder="Type song name, artist, or keywords" />
+    <button id="open-youtube-search" aria-label="Open YouTube search for the entered keywords">Search on YouTube</button>
+
+    <label for="youtube-url-input" style="margin-top:1.5rem;">Add YouTube song URL or video ID:</label>
+    <input type="text" id="youtube-url-input" placeholder="e.g. https://youtu.be/xxxx or video ID" />
+    <button id="add-song-btn" aria-label="Add the entered YouTube song to the playlist">Add Song to Playlist</button>
+
+    <div id="playlist" aria-label="Playlist"></div>
+
+    <div id="now-playing" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="controls">
+      <button id="play-pause-btn" disabled aria-label="Play or pause the current song">Play</button>
+      <button id="next-btn" disabled aria-label="Play the next song in the playlist">Next</button>
+    </div>
+
+    <div id="commentary-toggle">
+      <input type="checkbox" id="toggle-commentary" checked />
+      <label for="toggle-commentary">Enable AI Commentary between songs</label>
+    </div>
+  </main>
+
+  <footer>
+    Powered by YouTube &amp; Web Speech API | Audio only, no videos shown.
+  </footer>
+
+  <div id="player-container" style="width:0; height:0; overflow:hidden; position:absolute; left:-9999px; top:-9999px;">
+    <div id="player"></div>
+  </div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  let player;
+  let playlist = [];
+  let currentIndex = -1;
+  let commentaryEnabled = true;
+  let speaking = false;
+  let isPlaying = false;
+
+  // AI commentary messages to be spoken between songs
+  const commentaryMessages = [
+    "Up next, a fantastic tune to lift your spirits.",
+    "Hope you are enjoying the radio. Stay tuned for more great music!",
+    "Here's a special track just for you. Enjoy the vibes!",
+    "Bringing you the best hits with AI powered commentary!",
+    "Sit back, relax, and let the music flow through you.",
+    "This next song is sure to get you moving.",
+    "Your personal DJ is here, spinning the tunes you love.",
+    "Thanks for listening. More great songs coming your way."
+  ];
+
+  // Load YouTube Iframe API
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+      height: '0',
+      width: '0',
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange,
+        'onError': onPlayerError
+      },
+      playerVars: {
+        'autoplay': 0,
+        'controls': 0,
+        'disablekb': 1,
+        'modestbranding': 1,
+        'rel': 0,
+        'showinfo': 0
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    updateNowPlaying();
+  }
+
+  function onPlayerStateChange(event) {
+    if(event.data === YT.PlayerState.PLAYING) {
+      isPlaying = true;
+      updatePlayPauseButton();
+    } else if(event.data === YT.PlayerState.PAUSED) {
+      isPlaying = false;
+      updatePlayPauseButton();
+    } else if(event.data === YT.PlayerState.ENDED) {
+      isPlaying = false;
+      updatePlayPauseButton();
+      // When a song ends, play commentary or next song
+      if(commentaryEnabled && !speaking) {
+        speakCommentary().then(() => {
+          playNextSong();
+        });
+      } else {
+        playNextSong();
+      }
+    }
+  }
+
+  function onPlayerError(event) {
+    alert('Error playing video, skipping to next.');
+    playNextSong();
+  }
+
+  // Speak random commentary from array - returns a promise
+  function speakCommentary() {
+    return new Promise((resolve) => {
+      const message = commentaryMessages[Math.floor(Math.random() * commentaryMessages.length)];
+      speaking = true;
+      const utter = new SpeechSynthesisUtterance(message);
+      utter.lang = 'en-US';
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.onend = () => {
+        speaking = false;
+        resolve();
+      };
+      speechSynthesis.speak(utter);
+    });
+  }
+
+  // Parse YouTube video ID from URL or input string
+  function parseYouTubeID(text) {
+    text = text.trim();
+    let match = text.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if(match) return match[1];
+    match = text.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if(match) return match[1];
+    match = text.match(/embed\/([a-zA-Z0-9_-]{11})/);
+    if(match) return match[1];
+    if(text.length === 11 && /^[a-zA-Z0-9_-]+$/.test(text)) return text;
+    return null;
+  }
+
+  // Add song to playlist and play immediately
+  function addSong(urlOrId) {
+    const id = parseYouTubeID(urlOrId);
+    if(!id) {
+      alert('Invalid YouTube URL or Video ID.');
+      return;
+    }
+    if(playlist.find(song => song.id === id)) {
+      alert('Song already in playlist.');
+      return;
+    }
+    playlist.push({ id: id, title: 'Loading title...' });
+    renderPlaylist();
+    fetchVideoTitle(id).then(title => {
+      const song = playlist.find(s => s.id === id);
+      if(song) {
+        song.title = title;
+        renderPlaylist();
+      }
+    });
+    currentIndex = playlist.length - 1;
+    playSong(currentIndex);
+  }
+
+  // Fetch video title using YouTube oEmbed endpoint
+  async function fetchVideoTitle(videoId) {
+    try {
+      const res = await fetch(`https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=${videoId}&format=json`);
+      if(!res.ok) throw new Error('Failed to fetch title.');
+      const data = await res.json();
+      return data.title || 'Unknown title';
+    } catch {
+      return 'Unknown title';
+    }
+  }
+
+  // Render playlist UI
+  function renderPlaylist() {
+    const container = document.getElementById('playlist');
+    container.innerHTML = '';
+    playlist.forEach((song, i) => {
+      const div = document.createElement('div');
+      div.className = 'song' + (i === currentIndex ? ' playing' : '');
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
+      div.title = song.title;
+      div.textContent = song.title;
+      div.onclick = () => {
+        if(i !== currentIndex) {
+          currentIndex = i;
+          playSong(i);
+        }
+      };
+      div.onkeypress = (e) => {
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          div.click();
+        }
+      };
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.title = 'Remove Song';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeSong(i);
+      };
+      div.appendChild(removeBtn);
+      container.appendChild(div);
+    });
+    updateControlButtons();
+  }
+
+  // Remove song from playlist
+  function removeSong(index) {
+    if(index === currentIndex) {
+      playlist.splice(index,1);
+      if(playlist.length === 0) {
+        currentIndex = -1;
+        stopPlayback();
+      } else if(currentIndex >= playlist.length) {
+        currentIndex = 0;
+        playSong(currentIndex);
+      } else {
+        playSong(currentIndex);
+      }
+    } else {
+      if(index < currentIndex) {
+        currentIndex--;
+      }
+      playlist.splice(index,1);
+      renderPlaylist();
+    }
+    updateControlButtons();
+  }
+
+  // Play a song by index
+  function playSong(index) {
+    if(index < 0 || index >= playlist.length) return;
+    currentIndex = index;
+    const song = playlist[index];
+    if(!player || !song) return;
+    player.loadVideoById(song.id);
+    player.playVideo();
+    isPlaying = true;
+    updateNowPlaying();
+    renderPlaylist();
+  }
+
+  // Play next song or loop to start
+  function playNextSong() {
+    if(playlist.length === 0) return;
+    currentIndex++;
+    if(currentIndex >= playlist.length) currentIndex = 0;
+    playSong(currentIndex);
+  }
+
+  // Toggle play/pause
+  function togglePlayPause() {
+    if(!player) return;
+    if(isPlaying) {
+      player.pauseVideo();
+      isPlaying = false;
+    } else {
+      player.playVideo();
+      isPlaying = true;
+    }
+    updatePlayPauseButton();
+  }
+
+  // Stop playback and clear now playing
+  function stopPlayback() {
+    if(player) player.stopVideo();
+    isPlaying = false;
+    document.getElementById('now-playing').textContent = '';
+    renderPlaylist();
+    updateControlButtons();
+    updatePlayPauseButton();
+  }
+
+  // Update now playing text
+  function updateNowPlaying() {
+    const nowPlayingEl = document.getElementById('now-playing');
+    if(currentIndex !== -1 && playlist[currentIndex]) {
+      nowPlayingEl.textContent = 'Now Playing: ' + playlist[currentIndex].title;
+    } else {
+      nowPlayingEl.textContent = 'No song playing';
+    }
+  }
+
+  // Update play/pause button text
+  function updatePlayPauseButton() {
+    const btn = document.getElementById('play-pause-btn');
+    if(!btn) return;
+    if(currentIndex === -1) {
+      btn.textContent = 'Play';
+      btn.disabled = true;
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = isPlaying ? 'Pause' : 'Play';
+  }
+
+  // Enable/disable control buttons based on playlist status
+  function updateControlButtons() {
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const nextBtn = document.getElementById('next-btn');
+    if(playlist.length === 0) {
+      playPauseBtn.disabled = true;
+      nextBtn.disabled = true;
+    } else {
+      playPauseBtn.disabled = false;
+      nextBtn.disabled = playlist.length < 2;
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('open-youtube-search').addEventListener('click', () => {
+    const query = document.getElementById('search-input').value.trim();
+    if(query === '') {
+      alert('Please enter keywords to search.');
+      return;
+    }
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    window.open(url, '_blank');
+  });
+
+  document.getElementById('add-song-btn').addEventListener('click', () => {
+    const urlOrId = document.getElementById('youtube-url-input').value.trim();
+    if(urlOrId === '') {
+      alert('Please enter a YouTube URL or video ID.');
+      return;
+    }
+    addSong(urlOrId);
+    document.getElementById('youtube-url-input').value = '';
+  });
+
+  document.getElementById('toggle-commentary').addEventListener('change', (e) => {
+    commentaryEnabled = e.target.checked;
+  });
+
+  document.getElementById('play-pause-btn').addEventListener('click', () => {
+    togglePlayPause();
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    playNextSong();
+  });
+
+  window.addEventListener('beforeunload', () => {
+    speechSynthesis.cancel();
+  });
+</script>
+</body>
+</html>
+
